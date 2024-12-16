@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Pollution-Reducing Paint Demonstration</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Pacifico&display=swap" rel="stylesheet">
+  <style>
+    body { 
+      margin: 0; 
+      overflow: hidden; 
+      font-family: 'Poppins', sans-serif;
+      background-color: #000;
+      color: #fff;
+    }
+    canvas { display: block; }
+    #info {
+      position: absolute;
+      top: 10px;
+      width: 100%;
+      text-align: center;
+      color: white;
+      pointer-events: none;
+      z-index: 10;
+    }
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 0 5px;
+      background-color: #4287f5;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      transition: all 0.3s;
+    }
+    button:hover {
+      background-color: #2c5aa0;
+      transform: scale(1.05);
+    }
+    #paintInfo {
+      position: absolute;
+      top: 50%;
+      left: 20px;
+      transform: translateY(-50%);
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 300px;
+      display: none;
+      z-index: 10;
+    }
+    .chemical-info {
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+    .chemical-info:hover {
+      color: #4287f5;
+    }
+    #warningOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 0, 0, 0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 48px;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+      z-index: 5;
+    }
+    #paintProcessScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #6e45e2, #88d3ce);
+      display: none;
+      z-index: 20;
+      overflow: hidden;
+    }
+    #paintBucket {
+      position: absolute;
+      bottom: 50px;
+      right: 50px;
+      width: 120px;
+      height: 140px;
+      background-color: #4287f5;
+      border-radius: 0 0 60px 60px;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+    #paintBucket::before {
+      content: '';
+      position: absolute;
+      top: -25px;
+      left: 40px;
+      width: 40px;
+      height: 50px;
+      border: 6px solid #2c2c2c;
+      border-bottom: none;
+      border-radius: 40px 40px 0 0;
+    }
+    #paintLevel {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 0;
+      background: linear-gradient(to bottom, #ff9a9e, #fad0c4);
+      transition: height 0.5s;
+    }
+    .ingredient {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .ingredient:hover {
+      transform: scale(1.1);
+    }
+    .ingredient-label {
+      position: absolute;
+      bottom: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      font-weight: bold;
+      white-space: nowrap;
+      color: #fff;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+      width: 150px;
+      text-align: center;
+    }
+    #applyPaintButton {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #4287f5;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      display: none;
+    }
+    #congratulations {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 24px;
+      text-align: center;
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #000;
+      padding: 20px;
+      border-radius: 10px;
+      display: none;
+    }
+    #ingredientInfo {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #000;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 14px;
+      max-width: 250px;
+      z-index: 25;
+      display: none;
+    }
+    .feature-popup {
+      position: absolute;
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 20px;
+      padding: 20px;
+      font-size: 18px;
+      display: none;
+      animation: fadeInOut 8s ease-in-out;
+      z-index: 15;
+      color: #000;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+      max-width: 300px;
+      text-align: center;
+    }
+    .feature-popup h3 {
+      margin-top: 0;
+      color: #4287f5;
+      font-size: 24px;
+    }
+    #citySaved {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #000;
+      padding: 30px;
+      border-radius: 20px;
+      font-size: 36px;
+      text-align: center;
+      z-index: 30;
+      display: none;
+      animation: fadeInOut 8s ease-in-out;
+      font-family: 'Pacifico', cursive;
+    }
+    .paint-splash {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="%23ff9a9e" d="M50 0 C60 40 80 50 100 50 C80 60 60 80 50 100 C40 80 20 60 0 50 C20 50 40 40 50 0"/></svg>');
+      background-size: contain;
+      background-repeat: no-repeat;
+      pointer-events: none;
+      z-index: 15;
+    }
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0; }
+      10%, 90% { opacity: 1; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <h1 id="environmentStatus">Heavily Polluted Environment</h1>
+    <p id="environmentDetails">Dangerous levels of smog and particulate matter from vehicle emissions</p>
+  </div>
+  <div id="controls">
+    <button id="toggleEnvironment">Apply Paint</button>
+    <button id="togglePaintProcess">Make Revolutionary Paint</button>
+  </div>
+  <div id="paintInfo"></div>
+  <div id="warningOverlay">CITY IN DANGER!</div>
+  <div id="paintProcessScreen">
+    <div id="paintBucket">
+      <div id="paintLevel"></div>
+    </div>
+    <button id="applyPaintButton">Apply Paint</button>
+    <div id="congratulations"></div>
+  </div>
+  <div id="ingredientInfo"></div>
+  <div id="citySaved">City Saved! 🎉<br>Our paint is magical! ✨</div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+  <script>
+    // Scene setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(10, 20, 10);
+    scene.add(directionalLight);
+
+    // Camera position
+    camera.position.set(0, 10, 30);
+    camera.lookAt(0, 0, 0);
+
+    // Road
+    const roadTexture = new THREE.TextureLoader().load('https://threejsfundamentals.org/threejs/resources/images/checker.png');
+    roadTexture.wrapS = THREE.RepeatWrapping;
+    roadTexture.wrapT = THREE.RepeatWrapping;
+    roadTexture.repeat.set(10, 50);
+    const roadMaterial = new THREE.MeshStandardMaterial({ 
+      map: roadTexture,
+      color: 0x333333,
+    });
+    const road = new THREE.Mesh(
+      new THREE.PlaneGeometry(20, 100),
+      roadMaterial
+    );
+    road.rotation.x = -Math.PI / 2;
+    road.position.y = -0.1;
+    scene.add(road);
+
+    // Yellow lines on the road
+    const yellowLineMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    const yellowLine1 = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.2, 100),
+      yellowLineMaterial
+    );
+    yellowLine1.rotation.x = -Math.PI / 2;
+    yellowLine1.position.set(-2, 0, 0);
+    scene.add(yellowLine1);
+
+    const yellowLine2 = yellowLine1.clone();
+    yellowLine2.position.set(2, 0, 0);
+    scene.add(yellowLine2);
+
+    // Buildings
+    function createBuilding(x, z) {
+      const height = Math.random() * 10 + 10;
+      const buildingGroup = new THREE.Group();
+
+      // Main building
+      const geometry = new THREE.BoxGeometry(4, height, 4);
+      const material = new THREE.MeshPhongMaterial({ color: Math.random() * 0xffffff });
+      const building = new THREE.Mesh(geometry, material);
+      buildingGroup.add(building);
+
+      // Windows
+      const windowMaterial = new THREE.MeshPhongMaterial({ color: 0xaaaaff, emissive: 0x111111 });
+      for (let i = 1; i < height; i += 2) {
+        for (let j = -1; j <= 1; j += 2) {
+          for (let k = -1; k <= 1; k += 2) {
+            const window = new THREE.Mesh(
+              new THREE.BoxGeometry(0.5, 1, 0.1),
+              windowMaterial
+            );
+            window.position.set(j * 1.5, i, k * 1.5);
+            buildingGroup.add(window);
+          }
+        }
+      }
+
+      buildingGroup.position.set(x, height / 2, z);
+      scene.add(buildingGroup);
+    }
+
+    for (let i = -3; i <= 3; i++) {
+      createBuilding(-15, i * 15);
+      createBuilding(15, i * 15);
+    }
+
+    // Cars
+    const cars = [];
+    function createCar() {
+      const carGroup = new THREE.Group();
+
+      // Car body
+      const bodyGeometry = new THREE.BoxGeometry(2, 1, 4);
+      const bodyMaterial = new THREE.MeshPhongMaterial({ color: Math.random() * 0xffffff });
+      const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+      carGroup.add(body);
+
+      // Car roof
+      const roofGeometry = new THREE.BoxGeometry(1.5, 0.7, 2);
+      const roofMaterial = new THREE.MeshPhongMaterial({ color: bodyMaterial.color });
+      const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+      roof.position.set(0, 0.85, 0);
+      carGroup.add(roof);
+
+      // Wheels
+      const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.2, 16);
+      const wheelMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
+      const wheelPositions = [
+        [-0.9, -0.4, -1.2],
+        [0.9, -0.4, -1.2],
+        [-0.9, -0.4, 1.2],
+        [0.9, -0.4, 1.2]
+      ];
+
+      wheelPositions.forEach(position => {
+        const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(...position);
+        carGroup.add(wheel);
+      });
+
+      carGroup.position.set(Math.random() * 16 - 8, 0.5, Math.random() * 100 - 50);
+      scene.add(carGroup);
+      cars.push(carGroup);
+    }
+
+    for (let i = 0; i < 20; i++) {
+      createCar();
+    }
+
+    // Smoke particles
+    const smokeParticles = [];
+    function createSmoke(car) {
+      const smokeGroup = new THREE.Group();
+      const smokeMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x888888, 
+        transparent: true, 
+        opacity: 0.6 
+      });
+
+      for (let i = 0; i < 10; i++) {
+        const smokeGeometry = new THREE.SphereGeometry(0.1 + Math.random() * 0.2, 8, 8);
+        const smokeMesh = new THREE.Mesh(smokeGeometry, smokeMaterial);
+        smokeMesh.position.set(
+          Math.random() * 1 - 0.5,
+          Math.random() * 1,
+          -2 + Math.random() * 1
+        );
+        smokeGroup.add(smokeMesh);
+      }
+
+      smokeGroup.position.copy(car.position).add(new THREE.Vector3(0, 1, -2));
+      scene.add(smokeGroup);
+      smokeParticles.push(smokeGroup);
+    }
+
+    // Humans
+    function createHuman(x, z) {
+      const humanGroup = new THREE.Group();
+
+      // Head
+      const headGeometry = new THREE.SphereGeometry(0.3, 32, 32);
+      const headMaterial = new THREE.MeshPhongMaterial({ color: 0xffdab9 });
+      const head = new THREE.Mesh(headGeometry, headMaterial);
+      head.position.y = 1.7;
+      humanGroup.add(head);
+
+      // Body
+      const bodyGeometry = new THREE.CylinderGeometry(0.2, 0.2, 1.5, 32);
+      const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x4287f5 });
+      const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+      body.position.y = 0.75;
+      humanGroup.add(body);
+
+      humanGroup.position.set(x, 0, z);
+      scene.add(humanGroup);
+    }
+
+    for (let i = 0; i < 10; i++) {
+      createHuman(Math.random() * 30 - 15, Math.random() * 100 - 50);
+    }
+
+    // Chemical particles
+    const chemicals = [
+      { name: "Titanium Dioxide", color: 0xFFFFFF, benefit: "Photocatalytic pollution reduction" },
+      { name: "Strontium Aluminate", color: 0x90EE90, benefit: "Glow-in-the-dark feature" },
+      { name: "Silver Nanoparticles", color: 0xC0C0C0, benefit: "Anti-bacterial properties" },
+      { name: "Heat-Reflective Pigments", color: 0xFFD700, benefit: "Energy-saving features" },
+      { name: "Microcapsules", color: 0xFF69B4, benefit: "Self-healing capabilities" }
+    ];
+
+    // Create ingredient elements
+    function createIngredients() {
+      const paintProcessScreen = document.getElementById('paintProcessScreen');
+      chemicals.forEach((chemical, index) => {
+        const ingredient = document.createElement('div');
+        ingredient.className = 'ingredient';
+        ingredient.style.backgroundColor = '#' + chemical.color.toString(16).padStart(6, '0');
+        ingredient.style.left = `${50 + index * 200}px`;
+        ingredient.style.top = '100px';
+        ingredient.setAttribute('data-index', index);
+        ingredient.title = `${chemical.name}: ${chemical.benefit}`;
+        
+        const label = document.createElement('div');
+        label.className = 'ingredient-label';
+        label.textContent = chemical.name;
+        ingredient.appendChild(label);
+        
+        paintProcessScreen.appendChild(ingredient);
+
+        // Add floating animation
+        ingredient.style.animation = `float ${3 + Math.random() * 2}s ease-in-out infinite`;
+      });
+    }
+
+    createIngredients();
+
+    // Fog
+    scene.fog = new THREE.FogExp2(0x666666, 0.02);
+
+    // Animation
+    let isCleanEnvironment = false;
+    let showPaintProcess = false;
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      TWEEN.update();
+
+      cars.forEach((car, index) => {
+        car.position.z += 0.2;
+        if(car.position.z > 50) car.position.z = -50;
+
+        if (!isCleanEnvironment) {
+          if (smokeParticles.length <= index) {
+            createSmoke(car);
+          } else {
+            smokeParticles[index].position.copy(car.position).add(new THREE.Vector3(0, 1, -2));
+            smokeParticles[index].children.forEach(particle => {
+              particle.position.y += 0.02;
+              particle.position.x += (Math.random() - 0.5) * 0.05;
+              if (particle.position.y > 2) particle.position.y = 0;
+            });
+          }
+        }
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // Toggle paint process
+    const togglePaintProcessButton = document.getElementById('togglePaintProcess');
+    const paintProcessScreen = document.getElementById('paintProcessScreen');
+    const applyPaintButton = document.getElementById('applyPaintButton');
+    const congratulations = document.getElementById('congratulations');
+    const ingredientInfo = document.getElementById('ingredientInfo');
+    let ingredientsAdded = 0;
+
+    togglePaintProcessButton.addEventListener('click', () => {
+      paintProcessScreen.style.display = 'block';
+      resetIngredients();
+    });
+
+    function resetIngredients() {
+      const ingredients = document.querySelectorAll('.ingredient');
+      ingredients.forEach((ingredient, index) => {
+        ingredient.style.left = `${50 + index * 200}px`;
+        ingredient.style.top = '100px';
+        ingredient.style.transform = 'scale(1)';
+        ingredient.style.display = 'block';
+      });
+      ingredientsAdded = 0;
+      applyPaintButton.style.display = 'none';
+      congratulations.style.display = 'none';
+      document.getElementById('paintLevel').style.height = '0';
+    }
+
+    paintProcessScreen.addEventListener('click', (event) => {
+      if (event.target.classList.contains('ingredient')) {
+        const index = parseInt(event.target.getAttribute('data-index'));
+        moveIngredientToBucket(event.target, index);
+      }
+    });
+
+    function moveIngredientToBucket(ingredient, index) {
+      const bucketRect = document.getElementById('paintBucket').getBoundingClientRect();
+      const targetX = bucketRect.left + bucketRect.width / 2 - 30;
+      const targetY = bucketRect.top + bucketRect.height / 2 - 30;
+
+      ingredient.style.transition = 'all 2s ease';
+      ingredient.style.left = `${targetX}px`;
+      ingredient.style.top = `${targetY}px`;
+      ingredient.style.transform = 'scale(0.5)';
+      ingredient.style.opacity = '0.7';
+
+      setTimeout(() => {
+        ingredient.style.display = 'none';
+        ingredientsAdded++;
+        updatePaintLevel();
+        showIngredientInfo(chemicals[index]);
+        createPaintSplash();
+        if (ingredientsAdded === chemicals.length) {
+          showCongratulations();
+        }
+      }, 2000);
+    }
+
+    function updatePaintLevel() {
+      const paintLevel = document.getElementById('paintLevel');
+      const newHeight = (ingredientsAdded / chemicals.length) * 100;
+      paintLevel.style.height = `${newHeight}%`;
+    }
+
+    function showIngredientInfo(chemical) {
+      ingredientInfo.innerHTML = `
+        <h3>${chemical.name}</h3>
+        <p>${chemical.benefit}</p>
+      `;
+      ingredientInfo.style.display = 'block';
+      setTimeout(() => {
+        ingredientInfo.style.display = 'none';
+      }, 3000);
+    }
+
+    function createPaintSplash() {
+      const splash = document.createElement('div');
+      splash.className = 'paint-splash';
+      splash.style.left = `${Math.random() * window.innerWidth}px`;
+      splash.style.top = `${Math.random() * window.innerHeight}px`;
+      document.body.appendChild(splash);
+      setTimeout(() => {
+        splash.remove();
+      }, 2000);
+    }
+
+    function showCongratulations() {
+      congratulations.innerHTML = `
+        <h2>Congratulations! 🎉</h2>
+        <p>You have created the revolutionary paint! 🌈✨</p>
+        <p>This paint will help clean the environment and protect the city. 🌿🏙️</p>
+      `;
+      congratulations.style.display = 'block';
+      applyPaintButton.style.display = 'block';
+    }
+
+    applyPaintButton.addEventListener('click', () => {
+      paintProcessScreen.style.display = 'none';
+      toggleEnvironment();
+    });
+
+    // Toggle environment
+    const toggleButton = document.getElementById('toggleEnvironment');
+    const environmentStatus = document.getElementById('environmentStatus');
+    const environmentDetails = document.getElementById('environmentDetails');
+    const warningOverlay = document.getElementById('warningOverlay');
+    const citySaved = document.getElementById('citySaved');
+
+    function toggleEnvironment() {
+      isCleanEnvironment = !isCleanEnvironment;
+      if (isCleanEnvironment) {
+        scene.fog = new THREE.FogExp2(0xaaffaa, 0.005);
+        smokeParticles.forEach(smoke => scene.remove(smoke));
+        smokeParticles.length = 0;
+        roadMaterial.color.setHex(0x666666);
+        roadMaterial.emissive.setHex(0x222222);
+        environmentStatus.textContent = 'Clean Environment';
+        environmentDetails.textContent = 'Photocatalytic paint breaks down pollutants when exposed to light';
+        toggleButton.textContent = 'Show Polluted Environment';
+        toggleButton.style.backgroundColor = 'green';
+        warningOverlay.style.display = 'none';
+        showCleanEnvironmentInfo();
+      } else {
+        scene.fog = new THREE.FogExp2(0x666666, 0.02);
+        roadMaterial.color.setHex(0x333333);
+        roadMaterial.emissive.setHex(0x000000);
+        environmentStatus.textContent = 'Heavily Polluted Environment';
+        environmentDetails.textContent = 'Dangerous levels of smog and particulate matter from vehicle emissions';
+        toggleButton.textContent = 'Apply Paint';
+        toggleButton.style.backgroundColor = 'red';
+        warningOverlay.style.display = 'flex';
+        hideCleanEnvironmentInfo();
+      }
+    }
+
+    toggleButton.addEventListener('click', toggleEnvironment);
+
+    // Handle window resizing
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Clean environment info display
+    function showCleanEnvironmentInfo() {
+      const paintInfo = document.getElementById('paintInfo');
+      paintInfo.style.display = 'block';
+      paintInfo.innerHTML = `
+        <h2>Clean Environment Features:</h2>
+        <ul>
+          <li>90% reduction in air pollutants</li>
+          <li>Glowing roads for improved night visibility</li>
+          <li>Self-cleaning surfaces</li>
+          <li>Reduced urban heat island effect</li>
+          <li>Extended infrastructure lifespan</li>
+        </ul>
+      `;
+      
+      // Show initial message
+      citySaved.style.display = 'block';
+      setTimeout(() => {
+        citySaved.style.display = 'none';
+      }, 8000);
+      
+      // Show feature popups with delays
+      setTimeout(() => {
+        showFeaturePopup('Glowing Road', 'The road now glows in the dark, improving visibility and safety.');
+      }, 9000);
+      setTimeout(() => {
+        showFeaturePopup('Self-Cleaning', 'Watch as the buildings clean themselves, repelling dirt and pollutants.');
+      }, 18000);
+      setTimeout(() => {
+        showFeaturePopup('Heat Reflection', 'Feel the cooler temperature as the paint reflects heat, reducing the urban heat island effect.');
+      }, 27000);
+    }
+
+    function hideCleanEnvironmentInfo() {
+      const paintInfo = document.getElementById('paintInfo');
+      paintInfo.style.display = 'none';
+    }
+
+    function showFeaturePopup(title, description) {
+      const popup = document.createElement('div');
+      popup.className = 'feature-popup';
+      popup.innerHTML = `<h3>${title}</h3><p>${description}</p>`;
+      popup.style.left = `${Math.random() * (window.innerWidth - 200)}px`;
+      popup.style.top = `${Math.random() * (window.innerHeight - 100)}px`;
+      document.body.appendChild(popup);
+      popup.style.display = 'block';
+      setTimeout(() => {
+        popup.remove();
+      }, 8000);
+    }
+
+    // Initial setup
+    warningOverlay.style.display = 'flex';
+  </script>
+</body>
+</html>
+
